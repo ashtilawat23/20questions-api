@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import MongoDB
+from app.validation import Question
 from dotenv import load_dotenv
 import openai
 import os
@@ -47,3 +48,39 @@ async def get_random_word(category):
     except Exception as e:
         print(f"Error: {e}")
         return None
+
+
+@API.post("/ask_question")
+async def ask_question(question_data: Question):
+    question = question_data.question
+    word = question_data.word
+
+    if not question or not word:
+        raise HTTPException(status_code=400, detail="Missing question or word")
+
+    # Communicate with GPT
+    gpt_response = await ask_gpt(question, word)
+    return {"response": gpt_response}
+
+
+async def ask_gpt(question, word):
+    # Function to send a question to GPT-4 and ensure a yes/no response
+    prompt = (f"The word the player is asking about is {word}. //"
+              f"Answer with 'yes' or 'no':\nQuestion: {question}")
+    try:
+        response = await openai.Completion.create(
+            model="text-davinci-003",  # Replace with GPT-4-Turbo when available
+            prompt=prompt,
+            max_tokens=10  # Limit tokens to get concise answers
+        )
+        answer = response.choices[0].text.strip().lower()
+
+        # Check if the response is 'yes' or 'no'
+        if answer in ["yes", "no"]:
+            return answer
+        else:
+            return "Invalid response. Please rephrase your question to a simple yes or no format."
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return "An error occurred. Please try asking your question again."
