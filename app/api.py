@@ -2,9 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import MongoDB
-from app.validation import User, UserQuery, UserUpdate
-from app.validation import default_query, default_update, default_user
-
 
 API = FastAPI(
     title="BloomTech Labs DS API Template",
